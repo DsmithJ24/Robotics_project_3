@@ -1,12 +1,12 @@
 package main
 import (
    "fmt"
-   "os/exec"
+   //"os/exec"
    "time"
    "gobot.io/x/gobot"
    "gobot.io/x/gobot/platforms/dji/tello"
 )
-
+//from intelliJ
 func main() {
 	drone := tello.NewDriver("8890")
 	work := func() {

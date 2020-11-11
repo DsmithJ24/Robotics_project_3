@@ -6,7 +6,10 @@ import (
    "gobot.io/x/gobot"
    "gobot.io/x/gobot/platforms/dji/tello"
 )
-func main() {
+//ask why it does not do anything
+func swap() {
+//func main() {
+   //this driver # is for video and flight
    drone := tello.NewDriver("8890")
    work := func() {
       mplayer := exec.Command("mplayer", "-fps", "25", "-")
@@ -25,11 +28,12 @@ func main() {
       })
       drone.On(tello.VideoFrameEvent, func(data interface{}) {
          pkt := data.([]byte)
+         //run multiple times?
+         fmt.Println("Recieving Data")
          if _, err := mplayerIn.Write(pkt); err != nil {
             fmt.Println(err)
          }
       })
-
    }
    robot := gobot.NewRobot("tello",
       []gobot.Connection{},

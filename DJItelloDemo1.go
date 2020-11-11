@@ -1,11 +1,14 @@
 package main
 import (
-// "fmt"
+   "fmt"
    "time"
    "gobot.io/x/gobot"
    "gobot.io/x/gobot/platforms/dji/tello"
 )
-func orig() {
+//cannot have 2 mains in same folder
+//func main() {
+func swap() {
+   fmt.Println("Start")
    drone := tello.NewDriver("8888")
    work := func() {
       drone.TakeOff()

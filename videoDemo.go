@@ -42,7 +42,7 @@ func main() {
 		}
 		// Event: Listening the Tello connect event to start the video streaming.
 		//does not connect
-		//fmt.Println("connecting...")
+		fmt.Println("connecting...")
 		drone.On(tello.ConnectedEvent, func(data interface{}) {
 			fmt.Println("Connected to Tello.")
 			drone.StartVideo()
@@ -57,7 +57,7 @@ func main() {
 
 		//Event: Piping the video data into the FFMPEG function.
 		drone.On(tello.VideoFrameEvent, func(data interface{}) {
-			fmt.Println("receiving data")
+			//fmt.Println("receiving data")
 			pkt := data.([]byte)
 			if _, err := ffmpegIn.Write(pkt); err != nil {
 				fmt.Println(err)
@@ -90,18 +90,43 @@ func main() {
 	// now handle video frames from ffmpeg stream in main thread, to be macOs friendly
 	for {
 		buf := make([]byte, frameSize)
+		fmt.Println("handle vid frames")
 		if _, err := io.ReadFull(ffmpegOut, buf); err != nil {
 			fmt.Println(err)
 			continue
 		}
+		//no image, it is empty
 		img, _ := gocv.NewMatFromBytes(frameY, frameX, gocv.MatTypeCV8UC3, buf)
 		if img.Empty() {
+		    fmt.Println("Empty image")
 			continue
 		}
-
+		//never gets here due to above
+        fmt.Println("Show vid")
 		window.IMShow(img)
 		if window.WaitKey(1) >= 0 {
 			break
 		}
 	}
 }
+
+/*
+func handleConnected(drone *tello.Driver) func(interface{}) {
+	return func(data interface{}) {
+		fmt.Println("Drone connected.")
+
+		connected = true
+
+		drone.SetVideoEncoderRate(2)
+		gobot.Every(100*time.Millisecond, func() {
+			drone.StartVideo()
+		})
+
+		gobot.Every(time.Duration((1000.0/tickRate))*time.Millisecond, func() {
+			if connected {
+				tick(drone)
+			}
+		})
+	}
+}
+*/

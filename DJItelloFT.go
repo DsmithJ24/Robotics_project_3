@@ -7,7 +7,7 @@ import (
    "gobot.io/x/gobot/platforms/dji/tello"
 
    "gocv.io/x/gocv"
-   "golang.org/x/image/colornames"
+//   "golang.org/x/image/colornames"
 )
 //from intelliJ
 
@@ -35,7 +35,7 @@ func main() {
     classifier := gocv.NewCascadeClassifier()
    	classifier.Load("haarcascade_frontalface_default.xml")
     defer classifier.Close()
-    ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-pix_fmt", "bgr24", "-vcodec", "rawvideo",
+//    ffmpeg := exec.Command("ffmpeg", "-i", "pipe:0", "-pix_fmt", "bgr24", "-vcodec", "rawvideo",
     	"-an", "-sn", "-s", "960x720", "-f", "rawvideo", "pipe:1")
     ffmpegIn, _ := ffmpeg.StdinPipe()
     ffmpegOut, _ := ffmpeg.StdoutPipe()

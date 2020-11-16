@@ -68,7 +68,7 @@ func main() {
 				fmt.Println(err)
 			}
 		})
-/*
+
 		//TakeOff the Drone.
 		gobot.After(5*time.Second, func() {
 			drone.TakeOff()
@@ -80,7 +80,7 @@ func main() {
 			drone.Land()
 			fmt.Println("Tello Landing...")
 		})
-*/
+
 	}
 	//Robot: Tello Drone
 	robot := gobot.NewRobot("tello",

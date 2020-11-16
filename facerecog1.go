@@ -1,6 +1,14 @@
+package main
+//this stuff needs to be fixed
 import numpy as np
 import cv2 as cv
 import tello_drone as tello
+
+const (
+    host = ''
+    port = 9000
+    local_address = (host, port)
+)
 
 host = ''
 port = 9000

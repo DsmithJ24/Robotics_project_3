@@ -23,6 +23,7 @@ func main() {
 	// Driver: Tello Driver
 	drone := tello.NewDriver("8890")
 
+    //window := opencv.NewWindowDriver()
 	// OpenCV window to watch the live video stream from Tello.
 	window := gocv.NewWindow("Tello")
 
@@ -40,9 +41,13 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+        // need this
+        go func() {
+
+        }()
 		// Event: Listening the Tello connect event to start the video streaming.
 		//does not connect
-		fmt.Println("connecting...")
+		//fmt.Println("connecting...")
 		drone.On(tello.ConnectedEvent, func(data interface{}) {
 			fmt.Println("Connected to Tello.")
 			drone.StartVideo()
@@ -90,19 +95,20 @@ func main() {
 	// now handle video frames from ffmpeg stream in main thread, to be macOs friendly
 	for {
 		buf := make([]byte, frameSize)
-		fmt.Println("handle vid frames")
+//		fmt.Println("handle vid frames")
 		if _, err := io.ReadFull(ffmpegOut, buf); err != nil {
+//			fmt.Println("error, jumping up")
+			//EOF is error being printed, fixed as of 11/16
 			fmt.Println(err)
 			continue
 		}
-		//no image, it is empty
+
 		img, _ := gocv.NewMatFromBytes(frameY, frameX, gocv.MatTypeCV8UC3, buf)
 		if img.Empty() {
 		    fmt.Println("Empty image")
 			continue
 		}
-		//never gets here due to above
-        fmt.Println("Show vid")
+
 		window.IMShow(img)
 		if window.WaitKey(1) >= 0 {
 			break

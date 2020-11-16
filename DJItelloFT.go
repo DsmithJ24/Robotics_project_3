@@ -17,7 +17,7 @@ const (
 
 func main() {
 	drone := tello.NewDriver("8890")
-/*
+
 	//this is the take off function
 	takeOff := func() {
 		fmt.Println("Taking off")
@@ -28,8 +28,8 @@ func main() {
         	fmt.Println("Landed")
 		})
 	}
-*/
 
+/*
 //this is from the new ffmpeg demo code:
     window := gocv.NewWindow("Demo2")
     classifier := gocv.NewCascadeClassifier()
@@ -68,6 +68,8 @@ func main() {
 			}
 		})
     }
+
+   */
    robot := gobot.NewRobot("tello",
       []gobot.Connection{},
       []gobot.Device{drone},

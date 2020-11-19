@@ -6,10 +6,12 @@ import (
 	"os/exec" // To run the external commands.
 	"strconv" // Package strconv implements conversions to and from string
 	"time" //For time related operation
+	"log"
 
 	"gobot.io/x/gobot" // Gobot Framework.
 	"gobot.io/x/gobot/platforms/dji/tello" // DJI Tello package.
 	"gocv.io/x/gocv" // GoCV package to access the OpenCV library.
+	"golang.org/x/image/colornames"
 )
 
 // Frame size constant.
@@ -27,11 +29,18 @@ func main() {
 	// OpenCV window to watch the live video stream from Tello.
 	window := gocv.NewWindow("Tello")
 
+	//classifier stuff
+	classifier := gocv.NewCascadeClassifier()
+	classifier.Load("haarcascade_frontalface_default.xml")
+	defer classifier.Close()
+
 	//FFMPEG command to convert the raw video from the drone.
 	ffmpeg := exec.Command("ffmpeg", "-hwaccel", "auto", "-hwaccel_device", "opencl", "-i", "pipe:0",
 		"-pix_fmt", "bgr24", "-s", strconv.Itoa(frameX)+"x"+strconv.Itoa(frameY), "-f", "rawvideo", "pipe:1")
 	ffmpegIn, _ := ffmpeg.StdinPipe()
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
+
+
 
 	work := func() {
 		//Starting FFMPEG.
@@ -41,27 +50,27 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+
         // need this
         go func() {
 
         }()
+
 		// Event: Listening the Tello connect event to start the video streaming.
-		//does not connect
-		//fmt.Println("connecting...")
-		drone.On(tello.ConnectedEvent, func(data interface{}) {
+		go drone.On(tello.ConnectedEvent, func(data interface{}) {
 			fmt.Println("Connected to Tello.")
 			drone.StartVideo()
 			drone.SetVideoEncoderRate(tello.VideoBitRateAuto)
 			drone.SetExposure(0)
 
 			//For continued streaming of video.
-			gobot.Every(100*time.Millisecond, func() {
+			gobot.Every(250*time.Millisecond, func() {
 				drone.StartVideo()
 			})
 		})
 
 		//Event: Piping the video data into the FFMPEG function.
-		drone.On(tello.VideoFrameEvent, func(data interface{}) {
+		go drone.On(tello.VideoFrameEvent, func(data interface{}) {
 			//fmt.Println("receiving data")
 			pkt := data.([]byte)
 			if _, err := ffmpegIn.Write(pkt); err != nil {
@@ -71,17 +80,18 @@ func main() {
 
 		//TakeOff the Drone.
 		gobot.After(5*time.Second, func() {
-			drone.TakeOff()
+			go drone.TakeOff()
 			fmt.Println("Tello Taking Off...")
 		})
 
 		//Land the Drone.
 		gobot.After(15*time.Second, func() {
-			drone.Land()
+			go drone.Land()
 			fmt.Println("Tello Landing...")
 		})
 
 	}
+
 	//Robot: Tello Drone
 	robot := gobot.NewRobot("tello",
 		[]gobot.Connection{},
@@ -107,6 +117,14 @@ func main() {
 		if img.Empty() {
 		    fmt.Println("Empty image")
 			continue
+		}
+
+		//detect a face
+		imageRectangles := classifier.DetectMultiScale(img)
+
+		for _, rect := range imageRectangles {
+			log.Println("found a face,", rect)
+			gocv.Rectangle(&img, rect, colornames.Cadetblue, 3)
 		}
 
 		window.IMShow(img)

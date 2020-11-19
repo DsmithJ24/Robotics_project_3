@@ -6,12 +6,14 @@ import (
 	"os/exec" // To run the external commands.
 	"strconv" // Package strconv implements conversions to and from string
 	"time" //For time related operation
-	"log"
+	//"log"
+	"image"
+	"image/color"
 
 	"gobot.io/x/gobot" // Gobot Framework.
 	"gobot.io/x/gobot/platforms/dji/tello" // DJI Tello package.
 	"gocv.io/x/gocv" // GoCV package to access the OpenCV library.
-	"golang.org/x/image/colornames"
+//	"golang.org/x/image/colornames"
 )
 
 // Frame size constant.
@@ -29,10 +31,15 @@ func main() {
 	// OpenCV window to watch the live video stream from Tello.
 	window := gocv.NewWindow("Tello")
 
+
 	//classifier stuff
 	classifier := gocv.NewCascadeClassifier()
-	classifier.Load("haarcascade_frontalface_default.xml")
+	//classifier.Load("haarcascade_frontalface_default.xml")
+	classifier.Load("eyelook.xml")
 	defer classifier.Close()
+
+	blue := color.RGBA{0, 0, 255, 0}
+
 
 	//FFMPEG command to convert the raw video from the drone.
 	ffmpeg := exec.Command("ffmpeg", "-hwaccel", "auto", "-hwaccel_device", "opencl", "-i", "pipe:0",
@@ -102,7 +109,7 @@ func main() {
 	// calling Start(false) lets the Start routine return immediately without an additional blocking goroutine
 	robot.Start(false)
 
-	// now handle video frames from ffmpeg stream in main thread, to be macOs friendly
+	// now handle video frames from ffmpeg stream in main thread, runs continuously
 	for {
 		buf := make([]byte, frameSize)
 //		fmt.Println("handle vid frames")
@@ -119,12 +126,26 @@ func main() {
 			continue
 		}
 
+/*
 		//detect a face
 		imageRectangles := classifier.DetectMultiScale(img)
 
 		for _, rect := range imageRectangles {
 			log.Println("found a face,", rect)
 			gocv.Rectangle(&img, rect, colornames.Cadetblue, 3)
+		}
+*/
+
+		rects := classifier.DetectMultiScale(img)
+		fmt.Printf("found %d faces\n", len(rects))
+
+		for _, r := range rects {
+			gocv.Rectangle(&img, r, blue, 3)
+
+			size := gocv.GetTextSize("Human", gocv.FontHersheyPlain, 1.2, 2)
+			pt := image.Pt(r.Min.X+(r.Min.X/2)-(size.X/2), r.Min.Y-2)
+			gocv.PutText(&img, "Human", pt, gocv.FontHersheyPlain, 1.2, blue, 2)
+			return
 		}
 
 		window.IMShow(img)
@@ -133,24 +154,3 @@ func main() {
 		}
 	}
 }
-
-/*
-func handleConnected(drone *tello.Driver) func(interface{}) {
-	return func(data interface{}) {
-		fmt.Println("Drone connected.")
-
-		connected = true
-
-		drone.SetVideoEncoderRate(2)
-		gobot.Every(100*time.Millisecond, func() {
-			drone.StartVideo()
-		})
-
-		gobot.Every(time.Duration((1000.0/tickRate))*time.Millisecond, func() {
-			if connected {
-				tick(drone)
-			}
-		})
-	}
-}
-*/

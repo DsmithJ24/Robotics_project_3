@@ -86,14 +86,14 @@ func main() {
 		})
 
 		//TakeOff the Drone.
-		gobot.After(5*time.Second, func() {
-			go drone.TakeOff()
+		go gobot.After(5*time.Second, func() {
+			drone.TakeOff()
 			fmt.Println("Tello Taking Off...")
 		})
 
 		//Land the Drone.
-		gobot.After(15*time.Second, func() {
-			go drone.Land()
+		go gobot.After(15*time.Second, func() {
+			drone.Land()
 			fmt.Println("Tello Landing...")
 		})
 
@@ -110,7 +110,7 @@ func main() {
 	robot.Start(false)
 
 	// now handle video frames from ffmpeg stream in main thread, runs continuously
-	for {
+	go for {
 		buf := make([]byte, frameSize)
 //		fmt.Println("handle vid frames")
 		if _, err := io.ReadFull(ffmpegOut, buf); err != nil {
@@ -127,6 +127,7 @@ func main() {
 		}
 
 /*
+        //code from Teams example
 		//detect a face
 		imageRectangles := classifier.DetectMultiScale(img)
 
@@ -136,9 +137,12 @@ func main() {
 		}
 */
 
+        //code from the internet
 		rects := classifier.DetectMultiScale(img)
 		fmt.Printf("found %d faces\n", len(rects))
 
+        //this loop causes the video feed to lag behind the images being sent back.
+        //when run, looks like only a still image.
 		for _, r := range rects {
 			gocv.Rectangle(&img, r, blue, 3)
 

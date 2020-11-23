@@ -136,7 +136,7 @@ func main() {
 			gocv.Rectangle(&img, rect, colornames.Cadetblue, 3)
 		}
 */
-
+/*
         //code from the internet
 		rects := classifier.DetectMultiScale(img)
 		fmt.Printf("found %d faces\n", len(rects))
@@ -151,7 +151,7 @@ func main() {
 			gocv.PutText(&img, "Human", pt, gocv.FontHersheyPlain, 1.2, blue, 2)
 			return
 		}
-
+*/
 		window.IMShow(img)
 		if window.WaitKey(1) >= 0 {
 			break

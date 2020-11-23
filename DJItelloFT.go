@@ -6,42 +6,41 @@ import (
 	"os/exec" // To run the external commands.
 	"strconv" // Package strconv implements conversions to and from string
 	"time" //For time related operation
-
+	"log"
+        "image"
 	"gobot.io/x/gobot" // Gobot Framework.
 	"gobot.io/x/gobot/platforms/dji/tello" // DJI Tello package.
 	"gocv.io/x/gocv" // GoCV package to access the OpenCV library.
+	"golang.org/x/image/colornames"
 )
-//from intelliJ
 
+// Frame size constant.
 const (
-	frameX    = 960
-	frameY    = 720
+	frameX    = 720
+	frameY    = 960
 	frameSize = frameX * frameY * 3
 )
 
 func main() {
+	// Driver: Tello Driver
 	drone := tello.NewDriver("8890")
-/*
-	//this is the take off function
-	takeOff := func() {
-		fmt.Println("Taking off")
-		drone.TakeOff()
 
-    	gobot.After(10*time.Second, func() {
-        	drone.Land()
-        	fmt.Println("Landed")
-		})
-	}
-*/
-
-//this is from the new ffmpeg demo code:
+    //window := opencv.NewWindowDriver()
+	// OpenCV window to watch the live video stream from Tello.
 	window := gocv.NewWindow("Tello")
+
+	//classifier stuff
+	classifier := gocv.NewCascadeClassifier()
+	classifier.Load("haarcascade_frontalface_default.xml")
+	defer classifier.Close()
 
 	//FFMPEG command to convert the raw video from the drone.
 	ffmpeg := exec.Command("ffmpeg", "-hwaccel", "auto", "-hwaccel_device", "opencl", "-i", "pipe:0",
-		"-pix_fmt", "bgr24", "-s", strconv.Itoa(frameX)+"x"+strconv.Itoa(frameY), "-f", "rawvideo", "pipe:1")
+		"-pix_fmt", "bgr24", "-s", strconv.Itoa(frameY)+"x"+strconv.Itoa(frameX), "-f", "rawvideo", "pipe:1")
 	ffmpegIn, _ := ffmpeg.StdinPipe()
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
+
+
 
 	work := func() {
 		//Starting FFMPEG.
@@ -51,28 +50,29 @@ func main() {
 			fmt.Println(err)
 			return
 		}
+
         // need this
         go func() {
 
         }()
+
 		// Event: Listening the Tello connect event to start the video streaming.
-		//does not connect
-		fmt.Println("connecting...")
-		drone.On(tello.ConnectedEvent, func(data interface{}) {
+		go drone.On(tello.ConnectedEvent, func(data interface{}) {
 			fmt.Println("Connected to Tello.")
 			drone.StartVideo()
 			drone.SetVideoEncoderRate(tello.VideoBitRateAuto)
 			drone.SetExposure(0)
 
 			//For continued streaming of video.
-			gobot.Every(100*time.Millisecond, func() {
+			gobot.Every(500*time.Millisecond, func() {
 				drone.StartVideo()
+
 			})
 		})
 
 		//Event: Piping the video data into the FFMPEG function.
-		drone.On(tello.VideoFrameEvent, func(data interface{}) {
-			//fmt.Println("receiving data")
+		go drone.On(tello.VideoFrameEvent, func(data interface{}) {
+			fmt.Println("receiving data")
 			pkt := data.([]byte)
 			if _, err := ffmpegIn.Write(pkt); err != nil {
 				fmt.Println(err)
@@ -81,17 +81,18 @@ func main() {
 
 		//TakeOff the Drone.
 		gobot.After(5*time.Second, func() {
-			drone.TakeOff()
+			go drone.TakeOff()
 			fmt.Println("Tello Taking Off...")
 		})
 
 		//Land the Drone.
 		gobot.After(15*time.Second, func() {
-			drone.Land()
+			go drone.Land()
 			fmt.Println("Tello Landing...")
 		})
 
 	}
+
 	//Robot: Tello Drone
 	robot := gobot.NewRobot("tello",
 		[]gobot.Connection{},
@@ -113,13 +114,23 @@ func main() {
 			continue
 		}
 
-		img, _ := gocv.NewMatFromBytes(frameY, frameX, gocv.MatTypeCV8UC3, buf)
+		img, _ := gocv.NewMatFromBytes(frameX, frameY, gocv.MatTypeCV8UC3, buf)
 		if img.Empty() {
 		    fmt.Println("Empty image")
 			continue
 		}
 
-		window.IMShow(img)
+		faceDetect := gocv.NewMat()
+		gocv.Resize( img, &faceDetect, image.Pt( 90, 120 ), 0, 0, gocv.InterpolationNearestNeighbor)
+
+		//detect a face
+		imageRectangles := classifier.DetectMultiScale( faceDetect )
+
+		for _, rect := range imageRectangles {
+			log.Println("found a face,", rect)
+			gocv.Rectangle(&faceDetect, rect, colornames.Cadetblue, 3)
+		}
+		window.IMShow(faceDetect)
 		if window.WaitKey(1) >= 0 {
 			break
 		}

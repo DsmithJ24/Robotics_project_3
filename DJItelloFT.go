@@ -46,6 +46,7 @@ func main() {
 		"-pix_fmt", "bgr24", "-s", strconv.Itoa(frameY)+"x"+strconv.Itoa(frameX), "-f", "rawvideo", "pipe:1")
 	ffmpegIn, _ := ffmpeg.StdinPipe()
 	ffmpegOut, _ := ffmpeg.StdoutPipe()
+	refDistance := float64(0)
 
 
 
@@ -60,7 +61,7 @@ func main() {
 
         // need this
         go func() {
-	refDistance := float64(0)
+	
 		 
 
         }()

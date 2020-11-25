@@ -19,6 +19,8 @@ var minBufX = 27
 var minBufY = 39
 var maxBufX = 93
 var maxBufY = 51
+var minFrame = 30
+var maxFrame = 40
 
 // Frame size constant.
 const (
@@ -159,6 +161,12 @@ func main() {
 			maxFaceX := rect.Max.X
 			minFaceY := rect.Min.Y
 			maxFaceY := rect.Max.Y
+/*
+            //this was used to try to correct for distance. Did not work
+			sideX := maxFaceX - minFaceX
+			sideY := maxFaceY - minFaceY
+			sizeF := ((sideX^2) + (sideY^2))^(1/2)
+*/
 
 			//use values to move drone to center image within buffer
 			/*
@@ -200,6 +208,16 @@ func main() {
                 } else {
                     drone.Up(0)
                 }
+/*
+                //was also used for distance. Did not work correctly
+                if sizeF < minFrame{
+                    drone.Forward(15)
+                } else if sizeF > maxFrame{
+                    drone.Backward(15)
+                } else{
+                    drone.Forward(0)
+                }
+*/
             }
 
 		}

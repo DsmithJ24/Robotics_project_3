@@ -19,6 +19,7 @@ var minBufX = 27
 var minBufY = 39
 var maxBufX = 93
 var maxBufY = 51
+var distTolerance = float64(0.05 * dist(0, 0, frameX, frameY))
 
 // Frame size constant.
 const (
@@ -59,6 +60,8 @@ func main() {
 
         // need this
         go func() {
+	refDistance := float64(0)
+		 
 
         }()
 
@@ -139,12 +142,24 @@ func main() {
 		//detect a face
 		imageRectangles := classifier.DetectMultiScale( faceDetect )
 		//fmt.Println(imageRectangles)
-
+		i_distance = dist(drone.CounterClockwise, drone.Up, drone.Clockwise, drone.Down)
 		for _, rect := range imageRectangles {
 			log.Println("found a face,", rect)
 			gocv.Rectangle(&faceDetect, rect, colornames.Cadetblue, 3)
 
             //next line could be used for depth
+		if refDistance < (i_distance - distTolerance/1.5) {
+			fmt.Printf("forward : %q  %q %q\n", refDistance, i_distance-distTolerance/1.5, i_distance)
+			drone.Forward(30)
+		} else if refDistance > (i_distance + distTolerance/1.5) {
+			fmt.Printf("backwards : %q  %q %q\n", refDistance, i_distance+distTolerance/1.5, i_distance)
+			drone.Backward(30)
+		} else {
+			fmt.Printf("not forward or back\n")
+			drone.Forward(0)
+		}	
+			
+			
 			//fmt.Println("X is", rect.Size().X)
 
 			/*

@@ -7,20 +7,27 @@ import (
 	"strconv" // Package strconv implements conversions to and from string
 	"time" //For time related operation
 	"log"
-        "image"
+    "image"
 	"gobot.io/x/gobot" // Gobot Framework.
 	"gobot.io/x/gobot/platforms/dji/tello" // DJI Tello package.
 	"gocv.io/x/gocv" // GoCV package to access the OpenCV library.
 	"golang.org/x/image/colornames"
 )
 
+//first variable enables tracking as long as the drone is not landing
 var inFlight = false
+
+//these variables used for tracking
 var minBufX = 27
 var minBufY = 39
 var maxBufX = 93
 var maxBufY = 51
+
+/*
+//would have been used for depth adjustment
 var minFrame = 30
 var maxFrame = 40
+*/
 
 // Frame size constant.
 const (
@@ -33,7 +40,6 @@ func main() {
 	// Driver: Tello Driver
 	drone := tello.NewDriver("8890")
 
-    //window := opencv.NewWindowDriver()
 	// OpenCV window to watch the live video stream from Tello.
 	window := gocv.NewWindow("Tello")
 
@@ -87,14 +93,14 @@ func main() {
 			}
 		})
 
-		//TakeOff the Drone.
+		//Have the Drone take off
 		gobot.After(5*time.Second, func() {
 			go drone.TakeOff()
 			fmt.Println("Tello Taking Off...")
 			inFlight = true
 		})
 
-		//Land the Drone.
+		//Land the Drone after a given amount of time. Stop any tracking
 		gobot.After(60*time.Second, func() {
 			go drone.Land()
 			fmt.Println("Tello Landing...")
@@ -119,7 +125,6 @@ func main() {
 //		fmt.Println("handle vid frames")
 		if _, err := io.ReadFull(ffmpegOut, buf); err != nil {
 //			fmt.Println("error, jumping up")
-			//EOF is error being printed, fixed as of 11/16
 			fmt.Println(err)
 			continue
 		}
@@ -132,11 +137,6 @@ func main() {
 
 		faceDetect := gocv.NewMat()
 		gocv.Resize( img, &faceDetect, image.Pt( 90, 120 ), 0, 0, gocv.InterpolationNearestNeighbor)
-		//H is 90
-		//W 120
-		//box that is 9H by 36W
-		//centerpoint is 45H by 60W, go box length away from center point
-		//center buffer 39 - 51H by 27 - 93W
 
 		//detect a face
 		imageRectangles := classifier.DetectMultiScale( faceDetect )
@@ -149,49 +149,20 @@ func main() {
             //next line could be used for depth
 			//fmt.Println("X is", rect.Size().X)
 
-			/*
-			fmt.Println("X min is", rect.Min.X)
-			fmt.Println("X max is", rect.Max.X)
-			//fmt.Println("Y is", rect.Size().Y)
-			fmt.Println("Y min is", rect.Min.Y)
-			fmt.Println("Y max is", rect.Max.Y)
-			*/
-
+            //used to get the dimensions of the rectangle
 			minFaceX := rect.Min.X
 			maxFaceX := rect.Max.X
 			minFaceY := rect.Min.Y
 			maxFaceY := rect.Max.Y
 /*
-            //this was used to try to correct for distance. Did not work
+            //this was used to try to correct for depth. Did not work
 			sideX := maxFaceX - minFaceX
 			sideY := maxFaceY - minFaceY
 			sizeF := ((sideX^2) + (sideY^2))^(1/2)
 */
 
-			//use values to move drone to center image within buffer
-			/*
-			start with x
-
-			if x min is < minBufX
-			then move to the right until xmin >= minBufX
-
-			else if x max > x maxBufX
-			then move to the left until xmax <= maxBufX
-
-			else dont move
-
-			now for y
-
-			if y min is < minBufy
-			then move up to minBufy
-
-			else if y max is > maxBufY
-			then move down to maxBufY
-
-			else dont move
-
-			*/
-
+			//use values to move drone to center within buffer
+            //only run if this boolean is true
             if inFlight{
     			if minFaceX < minBufX{
     			    drone.CounterClockwise(15)
@@ -221,8 +192,6 @@ func main() {
             }
 
 		}
-        //use imageRectangles to have the robot center onto the face
-        //difference of 9 & 26 pixels between output info
 
 		window.IMShow(faceDetect)
 		if window.WaitKey(1) >= 0 {
